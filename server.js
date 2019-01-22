@@ -30,24 +30,22 @@ const server = net.createServer((socket) => {
     date = new Date().toUTCString();
 
     let response = `
-HTTP/1.1 200 OK
-Server: skynet/4.1.15
-Date: ${date}
-Content-Type: ${contentType}
-Content-Length: ${body.length}
+      HTTP/1.1 200 OK
+      Server: skynet/4.1.15
+      Date: ${date}
+      Content-Type: ${contentType}
+      Content-Length: ${body.length}
 
-${body}
-`;
+      ${body}
+    `;
 
     socket.end(response);
   });
 })
-  // handle errors on the server
   .on('error', (err) => {
     console.log(err);
   });
 
-// this starts the server
 server.listen(8080, () => {
   console.log('Server is UP');
 });
