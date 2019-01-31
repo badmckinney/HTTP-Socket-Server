@@ -1,4 +1,4 @@
-const file404 = `
+module.exports = file404 = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,7 +15,3 @@ const file404 = `
 </body>
 </html>
 `;
-
-module.exports = {
-  file404
-};

@@ -16,16 +16,16 @@ const server = net.createServer((socket) => {
     let URI = data.slice(4, data.indexOf("H") - 1);
 
     if (URI === "/" || URI === "/index.html") {
-      body = index.index;
+      body = index;
     } else if (URI === "/hydrogen.html") {
-      body = hydrogen.hydrogen;
+      body = hydrogen;
     } else if (URI === "/helium.html") {
-      body = helium.helium;
+      body = helium;
     } else if (URI === "/css/styles.css") {
-      body = styles.styles;
+      body = styles;
       contentType = "text/css";
     } else {
-      body = file404.file404;
+      body = file404;
     }
     date = new Date().toUTCString();
 

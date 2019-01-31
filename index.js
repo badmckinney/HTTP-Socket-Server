@@ -1,4 +1,4 @@
-const index = `
+module.exports = index = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +21,3 @@ const index = `
 </body>
 </html>
 `;
-
-module.exports = {
-  index
-};

@@ -1,4 +1,4 @@
-const styles = `
+module.exports = styles = `
 @import url(http://fonts.googleapis.com/css?family=Open+Sans|Roboto+Slab);
 
 /* http://meyerweb.com/eric/tools/css/reset/ 
@@ -110,7 +110,3 @@ a:hover{
   border-bottom: 1px dashed #C6C5AC;
 }
 `;
-
-module.exports = {
-  styles
-};

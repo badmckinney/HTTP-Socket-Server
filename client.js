@@ -1,4 +1,3 @@
-const http = require('http');
 const net = require('net');
 let args = process.argv;
 
@@ -7,7 +6,7 @@ let args = process.argv;
 **********************/
 
 if (!args[2]) {
-  console.log(`
+  return console.log(`
 
 ****************
 help / usage
@@ -42,102 +41,113 @@ example: node client.js google.com -h GET port80
 
   `);
 
+}
+
+let URI;
+let host;
+let port = 80;
+let method = 'GET';
+let headersOnly = false;
+let request;
+let methods = ["GET", "POST", "PUT", "DELETE"];
+
+if (args[2].includes('/')) {
+  URI = args[2].slice(args[2].indexOf('/'));
+} else {
+  URI = '/';
+}
+
+args.forEach(arg => {
+  if (arg === "-h") {
+    headersOnly = true;
+  } else if (arg.slice(0, 4).toLowerCase() === "port") {
+    port = arg.slice(4);
+  } else if (methods.includes(arg.toUpperCase())) {
+    method = arg;
+  }
+});
+
+
+if (args[2].slice(0, 9) === "localhost") {
+  port = 8080;
+  host = args[2].slice(0, 9);
+
+  request = `${method} ${URI} HTTP/1.1\r\n`;
+  request += `host: ${host}:8080\r\n`;
+  request += `date: ${new Date().toUTCString()}\r\n`;
+  request += `\r\n`;
 } else {
 
-  let URI = args[2].slice(args[2].indexOf('/'));
-  let host;
-  let port = 80;
-  let method = 'GET';
-  let headersOnly = false;
-  let requestHeader;
-  let methods = ["GET", "POST", "PUT", "DELETE"];
-
-  args.forEach(arg => {
-    if (arg === "-h") {
-      headersOnly = true;
-    } else if (arg.slice(0, 4).toLowerCase() === "port") {
-      port = arg.slice(4);
-    } else if (methods.includes(arg.toUpperCase())) {
-      method = arg;
-    }
-  });
-
-
-  if (args[2].slice(0, 9) === "localhost") {
-    port = 8080;
-    host = args[2].slice(0, 9);
-
-    requestHeader = `${method} ${URI} HTTP/1.1\r\n`;
-    requestHeader += `host: ${host}:8080\r\n`;
-    requestHeader += `date: ${new Date().toUTCString()}\r\n`;
-    requestHeader += `\r\n`;
-  } else {
-
+  if (args[2].includes('/')) {
     host = args[2].slice(0, args[2].indexOf('/'));
-
-    requestHeader = `${method} ${URI} HTTP/1.1\r\n`;
-    requestHeader += `host: ${host}\r\n`;
-    requestHeader += `date: ${new Date().toUTCString()}\r\n`;
-    requestHeader += `\r\n`;
+  } else {
+    host = args[2];
   }
 
-  /***************
-      Client
-  ***************/
+  host = args[2].slice(0, args[2].indexOf('/'));
 
-  const responseHeaders = {};
-  let responseBody;
+  request = `${method} ${URI} HTTP/1.1\r\n`;
+  request += `host: ${host}\r\n`;
+  request += `date: ${new Date().toUTCString()}\r\n`;
+  request += `\r\n`;
+}
 
-  let client = net.createConnection(port, host);
-  client.setEncoding('utf-8');
+/***************
+    Client
+***************/
 
-  client.on('connect', () => {
-    console.log('connected');
-    client.write(requestHeader);
-  });
+const responseHeaders = {};
+let responseBody;
 
-  client.on('error', (err) => {
-    if (err.code === "ENOTFOUND") {
-      process.stdout.write(`${err.code}: ${host} cannot be reached. Please provide a valid web address`);
-    } else if (err.code === "ETIMEDOUT") {
-      process.stdout.write(`${err.code}: Connection timed out. Please check that you are using the proper port`);
+let client = net.createConnection(port, host);
+client.setEncoding('utf-8');
+
+client.on('connect', () => {
+  console.log('connected');
+  client.write(request);
+});
+
+client.on('error', (err) => {
+  if (err.code === "ENOTFOUND") {
+    process.stdout.write(`${err.code}: ${host} cannot be reached. Please provide a valid web address`);
+  } else if (err.code === "ETIMEDOUT") {
+    process.stdout.write(`${err.code}: Connection timed out. Please check that you are using the proper port`);
+  } else {
+    process.stdout.write(`${err.code}: ${err}`);
+  }
+});
+
+client.on('data', (data) => {
+  let status = data.slice(data.indexOf('.') + 3, data.indexOf('\r\n'));
+  let responseHeader = data.slice(data.indexOf('\r\n'), data.indexOf('\r\n\r\n'));
+  responseBody = data.slice(data.indexOf('\r\n\r\n') + 1);
+
+  if (status[0] === "4") {
+    process.stdout.write(`Client Error: ${status}`);
+  } else if (status[0] === "5") {
+    process.stdout.write(`Server Error: ${status}`);
+  } else {
+
+    if (headersOnly) {
+      process.stdout.write(`${responseHeader} \r\n`);
     } else {
-      process.stdout.write(`There was an error: ${err.code}`);
+      process.stdout.write(`${responseBody} \r\n`);
+    }
+  };
+
+  let headers = responseHeader.split('\r\n');
+  headers.forEach(header => {
+    if (header) {
+      let colonIndex = header.indexOf(':');
+      let key = `${header.slice(0, colonIndex)}`;
+      let value = header.slice(colonIndex + 2);
+      responseHeaders[key] = value;
     }
   });
 
-  client.on('data', (data) => {
-    let status = data.slice(data.indexOf('.') + 3, data.indexOf('\r\n'));
-    let responseHeader = data.slice(data.indexOf('\r\n'), data.indexOf('\r\n\r\n'));
-    responseBody = data.slice(data.indexOf('\r\n\r\n') + 1);
+  client.end();
+});
 
-    if (status[0] === "4") {
-      process.stdout.write(`Client Error: ${status}`);
-    } else if (status[0] === "5") {
-      process.stdout.write(`Server Error: ${status}`);
-    } else {
-
-      if (headersOnly) {
-        process.stdout.write(`${responseHeader} \r\n`);
-      } else {
-        process.stdout.write(`${responseBody} \r\n`);
-      }
-    };
-
-    let headers = responseHeader.split('\r\n');
-    headers.forEach(header => {
-      if (header) {
-        let colonIndex = header.indexOf(':');
-        let key = `${header.slice(0, colonIndex)}`;
-        let value = header.slice(colonIndex + 2);
-        responseHeaders[key] = value;
-      }
-    });
-
-    client.end();
-  });
-
-  client.on('end', () => {
-    console.log('connection ended');
-  });
-};
+client.on('end', () => {
+  console.log('connection ended');
+});

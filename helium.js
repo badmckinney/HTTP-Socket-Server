@@ -1,4 +1,4 @@
-const helium = `
+module.exports = helium = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,6 +16,5 @@ const helium = `
 </html>
 `;
 
-module.exports = {
-  helium
-};
+
+
